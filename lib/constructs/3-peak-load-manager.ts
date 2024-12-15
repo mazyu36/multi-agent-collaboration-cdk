@@ -60,6 +60,10 @@ Response style:
       name: peakLoadManagerAgentName,
     });
 
+    new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
+      agentId: agent.agentId,
+    });
+
     // Agent Action Group
     const table = new dynamodb.Table(this, 'DynamoDBTableForPeakLoadManagerAgent', {
       tableName: dynamodbTable,

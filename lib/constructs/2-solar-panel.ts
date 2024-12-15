@@ -135,6 +135,10 @@ Response style:
       name: solarPanelAgentName,
     });
 
+    new bedrock.AgentAlias(this, 'SolarPanelAgentAlias', {
+      agentId: agent.agentId,
+    });
+
     agent.addKnowledgeBase(knowledgeBase);
 
     // Agent Action Group

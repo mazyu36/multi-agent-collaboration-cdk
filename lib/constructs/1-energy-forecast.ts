@@ -131,6 +131,9 @@ Response style:
       idleSessionTTL: Duration.seconds(1800),
       name: forecastAgentName,
     });
+    new bedrock.AgentAlias(this, 'EnergyForecastAgentAlias', {
+      agentId: agent.agentId,
+    });
 
     agent.addKnowledgeBase(knowledgeBase);
 
