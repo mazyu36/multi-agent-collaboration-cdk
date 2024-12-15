@@ -31,7 +31,7 @@ export class SolarPanel extends Construct {
     const knowledgeBaseName = `${solarPanelAgentName}-kb`;
     const knowledgeBaseDescription = 'KB containing solar panel instructions for installation and maintenance';
 
-    const bucketName = `solarPanel-agent-kb-${Stack.of(this).account}`;
+    const bucketName = `solar-panel-agent-kb-${Stack.of(this).account}`;
     const indexName = 'bedrock-knowledge-base-index';
     const vectorField = 'bedrock-knowledge-base-vector';
 
@@ -127,7 +127,7 @@ Response style:
 - Do not add extra information not required by the user
     `;
 
-    const agent = new bedrock.Agent(this, 'Agent', {
+    const agent = new bedrock.Agent(this, 'SolarPanelAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
       instruction,
       description,

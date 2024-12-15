@@ -1,0 +1,9 @@
+{"customer_id": "1", "item_id": "1", "item_desc":"fridge", "quota": "20", "used":"10", "essential":"True"}
+{"customer_id": "1", "item_id": "2", "item_desc":"iron", "quota": "25", "used":"30", "essential":"False"}
+{"customer_id": "1", "item_id": "3", "item_desc":"dry-machine", "quota": "35", "used":"40", "essential":"False"}
+{"customer_id": "1", "item_id": "4", "item_desc":"car charger socket", "quota": "100", "used":"200", "essential":"True", "peak":"True"}
+{"customer_id": "2", "item_id": "1", "item_desc":"fridge", "quota": "10", "used":"15", "essential":"True"}
+{"customer_id": "2", "item_id": "2", "item_desc":"iron", "quota": "35", "used":"30", "essential":"False"}
+{"customer_id": "2", "item_id": "3", "item_desc":"dry-machine", "quota": "40", "used":"20", "essential":"False"}
+{"customer_id": "2", "item_id": "4", "item_desc":"car charger socket", "quota": "150", "used":"130", "essential":"True"}
+{"customer_id": "2", "item_id": "5", "item_desc":"gardening electrical system", "quota": "70", "used":"250", "essential":"False", "peak":"True"}

@@ -124,7 +124,7 @@ Response style:
 - do not add extra information not required by the user
     `;
 
-    const agent = new bedrock.Agent(this, 'Agent', {
+    const agent = new bedrock.Agent(this, 'EnergyForecastAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
       instruction,
       description,
