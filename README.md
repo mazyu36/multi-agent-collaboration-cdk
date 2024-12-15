@@ -1,14 +1,11 @@
-# Welcome to your CDK TypeScript project
+# Energy Efficiency Management System - Multi-Agent Workshop on CDK
+This repository implements the [Energy Efficiency Management System - Multi-Agent Workshop](https://github.com/aws-samples/bedrock-multi-agents-collaboration-workshop) using AWS CDK.
 
-This is a blank project for CDK development with TypeScript.
+## 1 Forecasting Agent
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+After running `cdk deploy`, execute the script using the following command.
+Python and boto3 are required.
 
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+```sh
+% python preparation/1-energy-forecast/load_data_to_dynamodb.py
+```

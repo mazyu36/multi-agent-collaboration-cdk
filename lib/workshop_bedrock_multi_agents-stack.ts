@@ -1,16 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { EnergyForecast } from './constructs/1-energy-forecast';
 
 export class WorkshopBedrockMultiAgentsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'WorkshopBedrockMultiAgentsQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const energyForecast = new EnergyForecast(this, 'EnergyForecast', {})
   }
 }
