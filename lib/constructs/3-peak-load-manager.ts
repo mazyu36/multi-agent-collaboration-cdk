@@ -7,7 +7,8 @@ import {
   aws_s3 as s3,
   aws_s3_deployment as s3deploy,
   aws_logs as logs,
-  aws_lambda as lambda
+  aws_lambda as lambda,
+  CfnOutput
 } from 'aws-cdk-lib';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { bedrock } from '@cdklabs/generative-ai-cdk-constructs';
@@ -17,6 +18,8 @@ export interface PeakLoadManagerProps {
 }
 
 export class PeakLoadManager extends Construct {
+  public readonly agent: bedrock.Agent;
+  public readonly agentAlias: bedrock.AgentAlias;
   constructor(scope: Construct, id: string, props: PeakLoadManagerProps) {
     super(scope, id);
 
@@ -58,10 +61,11 @@ Response style:
       description,
       idleSessionTTL: Duration.seconds(1800),
       name: peakLoadManagerAgentName,
+      shouldPrepareAgent: true,
     });
 
     new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
-      agentId: agent.agentId,
+      agent,
     });
 
     // Agent Action Group
@@ -95,13 +99,10 @@ Response style:
 
     table.grantReadWriteData(actionGroupFunction);
 
-    const actionGroup = new bedrock.AgentActionGroup(this, 'PeakLoadManagerActionGroup', {
-      actionGroupExecutor: {
-        lambda: actionGroupFunction,
-      },
-      actionGroupState: 'ENABLED',
-      actionGroupName: 'peak_load_actions',
+    const actionGroup = new bedrock.AgentActionGroup({
+      name: 'peak_load_actions',
       description: 'Function to get usage, peaks, redistribution for a user',
+      executor: bedrock.ActionGroupExecutor.fromlambdaFunction(actionGroupFunction),
       functionSchema: {
         functions: [
           {
@@ -154,14 +155,31 @@ Response style:
     agent.addActionGroup(actionGroup);
 
 
-    const codeInterpreterActionGroup = new bedrock.AgentActionGroup(this, 'PeakLoadManagerCodeInterpretestActionGroup', {
-      actionGroupName: 'CodeInterpreterAction',
-      actionGroupState: 'ENABLED',
-      parentActionGroupSignature: 'AMAZON.UserInput',
+    const codeInterpreterActionGroup = new bedrock.AgentActionGroup({
+      name: 'PeakLoadCodeInterpreterAction',
+      parentActionGroupSignature: bedrock.ParentActionGroupSignature.USER_INPUT,
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
 
+
+    const agentAlias = new bedrock.AgentAlias(this, 'Alias', {
+      agent,
+      aliasName: 'PeakLoadManagerAgentAlias',
+    });
+
+    this.agent = agent;
+    this.agentAlias = agentAlias;
+
+    new CfnOutput(this, 'OutputAgentId', {
+      value: this.agent.agentId,
+      exportName: 'PeakLoadAgentId',
+    });
+
+    new CfnOutput(this, 'OutputAgentAliasId', {
+      value: this.agentAlias.aliasId,
+      exportName: 'PeakLoadAgentAliasId',
+    });
   }
 
 };

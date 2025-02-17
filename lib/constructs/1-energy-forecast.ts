@@ -7,7 +7,8 @@ import {
   aws_s3 as s3,
   aws_s3_deployment as s3deploy,
   aws_logs as logs,
-  aws_lambda as lambda
+  aws_lambda as lambda,
+  CfnOutput
 } from 'aws-cdk-lib';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { bedrock, opensearchserverless, opensearch_vectorindex } from '@cdklabs/generative-ai-cdk-constructs';
@@ -17,6 +18,8 @@ export interface EnergyForecastProps {
 }
 
 export class EnergyForecast extends Construct {
+  public readonly agent: bedrock.Agent;
+  public readonly agentAlias: bedrock.AgentAlias;
   constructor(scope: Construct, id: string, props: EnergyForecastProps) {
     super(scope, id);
 
@@ -61,7 +64,7 @@ export class EnergyForecast extends Construct {
     });
 
     // Knowledge Base
-    const knowledgeBase = new bedrock.KnowledgeBase(this, 'KnowledgeBaseForEnergyForecastAgent', {
+    const knowledgeBase = new bedrock.VectorKnowledgeBase(this, 'KnowledgeBaseForEnergyForecastAgent', {
       embeddingsModel: bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
       vectorIndex,
       vectorStore,
@@ -130,9 +133,11 @@ Response style:
       description,
       idleSessionTTL: Duration.seconds(1800),
       name: forecastAgentName,
+      shouldPrepareAgent:true,
     });
+
     new bedrock.AgentAlias(this, 'EnergyForecastAgentAlias', {
-      agentId: agent.agentId,
+      agent,
     });
 
     agent.addKnowledgeBase(knowledgeBase);
@@ -168,13 +173,10 @@ Response style:
 
     table.grantReadWriteData(actionGroupFunction);
 
-    const actionGroup = new bedrock.AgentActionGroup(this, 'EnergyForecastActionGroup', {
-      actionGroupExecutor: {
-        lambda: actionGroupFunction,
-      },
-      actionGroupState: 'ENABLED',
-      actionGroupName: 'forecast_consumption_actions',
+    const actionGroup = new bedrock.AgentActionGroup({
+      name: 'forecast_consumption_actions',
       description: 'Function to get usage forecast for a user',
+      executor: bedrock.ActionGroupExecutor.fromlambdaFunction(actionGroupFunction),
       functionSchema: {
         functions: [
           {
@@ -243,14 +245,32 @@ Response style:
     agent.addActionGroup(actionGroup);
 
 
-    const codeInterpreterActionGroup = new bedrock.AgentActionGroup(this, 'EnergyForecastCodeInterpretestActionGroup', {
-      actionGroupName: 'CodeInterpreterAction',
-      actionGroupState: 'ENABLED',
-      parentActionGroupSignature: 'AMAZON.UserInput',
+    const codeInterpreterActionGroup = new bedrock.AgentActionGroup({
+      name: 'EnergyCodeInterpreterAction',
+      parentActionGroupSignature: bedrock.ParentActionGroupSignature.USER_INPUT,
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
 
+
+
+    const agentAlias = new bedrock.AgentAlias(this, 'Alias', {
+      agent,
+      aliasName: 'EnergyForecastAgentAlias',
+    });
+
+    this.agent = agent;
+    this.agentAlias = agentAlias;
+
+    new CfnOutput(this, 'OutputAgentId', {
+      value: this.agent.agentId,
+      exportName: 'EnergyForecastAgentId',
+    });
+
+    new CfnOutput(this, 'OutputAgentAliasId', {
+      value: this.agentAlias.aliasId,
+      exportName: 'EnergyForecastAgentAliasId',
+    });
   }
 
 };
