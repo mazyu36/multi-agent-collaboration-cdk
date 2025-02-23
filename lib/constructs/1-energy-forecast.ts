@@ -133,10 +133,11 @@ Response style:
       description,
       idleSessionTTL: Duration.seconds(1800),
       name: forecastAgentName,
-      shouldPrepareAgent:true,
+      shouldPrepareAgent: true,
     });
+    this.agent = agent;
 
-    new bedrock.AgentAlias(this, 'EnergyForecastAgentAlias', {
+    this.agentAlias = new bedrock.AgentAlias(this, 'EnergyForecastAgentAlias', {
       agent,
     });
 
@@ -251,16 +252,6 @@ Response style:
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
-
-
-
-    const agentAlias = new bedrock.AgentAlias(this, 'Alias', {
-      agent,
-      aliasName: 'EnergyForecastAgentAlias',
-    });
-
-    this.agent = agent;
-    this.agentAlias = agentAlias;
 
     new CfnOutput(this, 'OutputAgentId', {
       value: this.agent.agentId,

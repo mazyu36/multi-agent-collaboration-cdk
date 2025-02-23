@@ -138,8 +138,9 @@ Response style:
       name: solarPanelAgentName,
       shouldPrepareAgent: true,
     });
+    this.agent = agent;
 
-    new bedrock.AgentAlias(this, 'SolarPanelAgentAlias', {
+    this.agentAlias=new bedrock.AgentAlias(this, 'SolarPanelAgentAlias', {
       agent,
     });
 
@@ -227,15 +228,6 @@ Response style:
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
-
-
-    const agentAlias = new bedrock.AgentAlias(this, 'Alias', {
-      agent,
-      aliasName: 'SolarPanelAgentAlias',
-    });
-
-    this.agent = agent;
-    this.agentAlias = agentAlias;
 
     new CfnOutput(this, 'OutputAgentId', {
       value: this.agent.agentId,

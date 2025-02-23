@@ -63,8 +63,9 @@ Response style:
       name: peakLoadManagerAgentName,
       shouldPrepareAgent: true,
     });
+    this.agent = agent;
 
-    new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
+    this.agentAlias = new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
       agent,
     });
 
@@ -161,15 +162,6 @@ Response style:
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
-
-
-    const agentAlias = new bedrock.AgentAlias(this, 'Alias', {
-      agent,
-      aliasName: 'PeakLoadManagerAgentAlias',
-    });
-
-    this.agent = agent;
-    this.agentAlias = agentAlias;
 
     new CfnOutput(this, 'OutputAgentId', {
       value: this.agent.agentId,

@@ -5,7 +5,9 @@ import {
   RemovalPolicy,
   aws_dynamodb as dynamodb,
   aws_logs as logs,
-  aws_lambda as lambda
+  aws_lambda as lambda,
+  aws_iam as iam,
+  CfnOutput
 } from 'aws-cdk-lib';
 import { PythonFunction, PythonLayerVersion } from '@aws-cdk/aws-lambda-python-alpha';
 import { EnergyForecast } from './1-energy-forecast';
@@ -57,6 +59,23 @@ export class MultiAgentOrchestrator extends Construct {
       layers: [layer],
     });
 
+    energyForecast.agentAlias.grantInvoke(multiAgentOrchestratorFunction);
+    solarPanel.agentAlias.grantInvoke(multiAgentOrchestratorFunction);
+    peakLoadManager.agentAlias.grantInvoke(multiAgentOrchestratorFunction);
     table.grantReadWriteData(multiAgentOrchestratorFunction);
+
+
+    // MultiAgentOrchestratorFunction needs to have permissions to invoke Bedrock models
+    multiAgentOrchestratorFunction.role!.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonBedrockReadOnly'));
+
+
+    const url = multiAgentOrchestratorFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    new CfnOutput(this, 'LambdaUrl', {
+      value: url.url,
+      exportName: 'LambdaUrl',
+    });
   }
 }
