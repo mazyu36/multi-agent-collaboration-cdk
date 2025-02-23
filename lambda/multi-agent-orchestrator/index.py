@@ -1,9 +1,7 @@
-import uuid
 import asyncio
-from typing import Optional, List, Dict, Any
+from typing import Dict, Any
 import json
 import os
-import sys
 from multi_agent_orchestrator.orchestrator import (
     MultiAgentOrchestrator,
     OrchestratorConfig,
@@ -13,12 +11,16 @@ from multi_agent_orchestrator.agents import (
     AmazonBedrockAgentOptions,
     AgentResponse,
 )
-from multi_agent_orchestrator.classifiers import BedrockClassifier, BedrockClassifierOptions
+from multi_agent_orchestrator.classifiers import (
+    BedrockClassifier,
+    BedrockClassifierOptions,
+)
 
 from multi_agent_orchestrator.storage import DynamoDbChatStorage
 from multi_agent_orchestrator.types import ConversationMessage
 
 region = os.environ.get("AWS_REGION", "us-east-1")
+model_id = os.getenv("MODEL_ID")
 table_name = os.getenv("TABLE_NAME")
 energy_forecast_agent_id = os.getenv("ENERGY_FORECAST_AGENT_ID")
 energy_forecast_agent_alias_id = os.getenv("ENERGY_FORECAST_AGENT_ALIAS_ID")
@@ -29,18 +31,19 @@ peak_load_agent_alias_id = os.getenv("PEAK_LOAD_AGENT_ALIAS_ID")
 
 TTL_DURATION = 3600  # in seconds
 dynamodb_storage = DynamoDbChatStorage(
-    table_name, ttl_key="TTL", ttl_duration=TTL_DURATION, region=region,
+    table_name,
+    ttl_key="TTL",
+    ttl_duration=TTL_DURATION,
+    region=region,
 )
 
-custom_bedrock_classifier = BedrockClassifier(BedrockClassifierOptions(
-    model_id='amazon.nova-pro-v1:0',
-    region='us-east-1',
-    inference_config={
-        'maxTokens': 500,
-        'temperature': 0.7,
-        'topP': 0.9
-    }
-))
+custom_bedrock_classifier = BedrockClassifier(
+    BedrockClassifierOptions(
+        model_id=model_id,
+        region=region,
+        inference_config={"maxTokens": 500, "temperature": 0.7, "topP": 0.9},
+    )
+)
 
 orchestrator = MultiAgentOrchestrator(
     options=OrchestratorConfig(
@@ -54,7 +57,7 @@ orchestrator = MultiAgentOrchestrator(
         MAX_MESSAGE_PAIRS_PER_AGENT=10,
     ),
     storage=dynamodb_storage,
-    classifier=custom_bedrock_classifier
+    classifier=custom_bedrock_classifier,
 )
 
 energy_forecast_agent = AmazonBedrockAgent(
@@ -89,14 +92,13 @@ orchestrator.add_agent(peak_load_agent)
 
 
 def serialize_agent_response(response: Any) -> Dict[str, Any]:
-
-    text_response = ''
+    text_response = ""
     if isinstance(response, AgentResponse) and response.streaming is False:
         # Handle regular response
         if isinstance(response.output, str):
             text_response = response.output
         elif isinstance(response.output, ConversationMessage):
-                text_response = response.output.content[0].get('text')
+            text_response = response.output.content[0].get("text")
 
     """Convert AgentResponse into a JSON-serializable dictionary."""
     return {
@@ -110,24 +112,25 @@ def serialize_agent_response(response: Any) -> Dict[str, Any]:
         "streaming": response.streaming,
     }
 
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     try:
-        user_input = event.get('query')
-        user_id = event.get('userId')
-        session_id = event.get('sessionId')
-        response = asyncio.run(orchestrator.route_request(user_input, user_id, session_id))
+        body = json.loads(event.get("body", "{}"))
+        user_input = body.get("query")
+        user_id = body.get("userId")
+        session_id = body.get("sessionId")
+        response = asyncio.run(
+            orchestrator.route_request(user_input, user_id, session_id)
+        )
 
         # Serialize the AgentResponse to a JSON-compatible format
         serialized_response = serialize_agent_response(response)
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps(serialized_response)
-        }
+        return {"statusCode": 200, "body": json.dumps(serialized_response)}
 
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
             "statusCode": 500,
-            "body": json.dumps({"error": "Internal Server Error"})
+            "body": json.dumps({"error": "Internal Server Error"}),
         }

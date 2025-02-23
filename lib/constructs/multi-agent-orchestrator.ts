@@ -1,8 +1,8 @@
 import { Construct } from 'constructs';
 import {
-  Stack,
   Duration,
   RemovalPolicy,
+  aws_bedrock as bedrock,
   aws_dynamodb as dynamodb,
   aws_logs as logs,
   aws_lambda as lambda,
@@ -49,6 +49,7 @@ export class MultiAgentOrchestrator extends Construct {
       logRetention: logs.RetentionDays.ONE_DAY,
       environment: {
         TABLE_NAME: table.tableName,
+        MODEL_ID: bedrock.FoundationModelIdentifier.AMAZON_NOVA_PRO_V1_0.modelId,
         ENERGY_FORECAST_AGENT_ID: energyForecast.agent.agentId,
         ENERGY_FORECAST_AGENT_ALIAS_ID: energyForecast.agentAlias.aliasId,
         SOLAR_PANEL_AGENT_ID: solarPanel.agent.agentId,
@@ -66,7 +67,7 @@ export class MultiAgentOrchestrator extends Construct {
 
 
     // MultiAgentOrchestratorFunction needs to have permissions to invoke Bedrock models
-    multiAgentOrchestratorFunction.role!.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonBedrockReadOnly'));
+    multiAgentOrchestratorFunction.role!.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonBedrockFullAccess'));
 
 
     const url = multiAgentOrchestratorFunction.addFunctionUrl({

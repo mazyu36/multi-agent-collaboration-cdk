@@ -64,6 +64,23 @@ Assign solar panel-related inquiries and issues to the Solar Panel Agent, respec
 Direct peak load management and energy optimization tasks to the Peak Load Manager Agent, leveraging its analytical capabilities.
 ```
 
+## How to use multi-agent
+
+```sh
+curl --location 'https://YOUR_LAMBDA_FUNCTION_URL' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "Can you give me my forecasted energy consumption month by month? My id is 1",
+    "userId": "test-user",
+    "sessionId": "test"
+}'
+
+# result
+{"metadata": {"agent_id": "energy-forecast-agent", "agent_name": "Energy Forecast Agent", "user_input": "Can you give me my forecasted energy consumption month by month? My id is 1", "session_id": "test"}, "output": "Here is your forecasted energy consumption for the next 3 months:\n- November 2024: 170.0 kWh\n- December 2024: 175.0 kWh\n- January 2025: 182.0 kWh\n", "streaming": false}
+```
+
+
+
 ## Prompt
 ### 1. Energy Forecast
 * Testing get forecast
