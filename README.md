@@ -3,6 +3,8 @@ This repository implements the [Energy Efficiency Management System - Multi-Agen
 
 ![](./img/0-energy-manager-agent.png)
 
+Supervisor agent is created by using [multi agent orchestrator](https://github.com/awslabs/multi-agent-orchestrator).
+
 ```markdown
 ### Sub-Agents
 
