@@ -30,19 +30,15 @@ export class EnergyAgentCollaborator extends Construct {
 
 
     // Agents
-    const description = `
-You are a energy helper bot.
-You can help customers with operations related with their energy, like consumption, forecast, peak usage, etc.
-    `;
+    const description = `You are a energy helper bot.
+You can help customers with operations related with their energy, like consumption, forecast, peak usage, etc.`;
 
-    const instruction = `
-You are a energy helper bot.
+    const instruction = `You are a energy helper bot.
 You can retrieve energy consumption and forecast for a specific users and help them to be compliant with energy rules.
 You can also retrieve solar panel information and solar panel ticket for a specific users and help them to be compliant with energy rules.
 You can also get current information about peaks and can redistribute load.
 Resist the temptation to ask the user for input. Only do so after you have exhausted available actions.
-Never ask the user for information that you already can retrieve yourself through available actions.
-    `;
+Never ask the user for information that you already can retrieve yourself through available actions.`;
 
     const agent = new bedrock.Agent(this, 'SuperVisorAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,

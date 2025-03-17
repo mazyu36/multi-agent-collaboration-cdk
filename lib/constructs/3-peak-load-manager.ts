@@ -32,13 +32,10 @@ export class PeakLoadManager extends Construct {
     const dynamodbSk = 'item_id';
 
     // Agents
-    const description = `
-You are a peak load manager bot.
-You can retrieve information from IoT devices, identify process and their peak energy consumption and suggest shifts to off-peak hours.
-    `;
+    const description = `You are a peak load manager bot.
+You can retrieve information from IoT devices, identify process and their peak energy consumption and suggest shifts to off-peak hours.`;
 
-    const instruction = `
-You are a Peak Load Manager Bot that optimizes energy consumption patterns
+    const instruction = `You are a Peak Load Manager Bot that optimizes energy consumption patterns
 by analyzing IoT device data and process schedules.
 
 Your capabilities include:
@@ -52,8 +49,7 @@ Response style:
 - Focus on actionable recommendations
 - Support suggestions with data
 - Be concise yet thorough
-- Do not request information that can be retrieved from IoT devices
-    `;
+- Do not request information that can be retrieved from IoT devices`;
 
     const agent = new bedrock.Agent(this, 'PeakLoadManagerAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,

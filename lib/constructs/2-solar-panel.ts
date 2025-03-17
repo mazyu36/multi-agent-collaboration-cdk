@@ -70,6 +70,7 @@ export class SolarPanel extends Construct {
       embeddingsModel: bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
       vectorIndex,
       vectorStore,
+      vectorType: bedrock.VectorType.BINARY,
       indexName,
       vectorField,
       description: knowledgeBaseDescription,
@@ -98,13 +99,10 @@ export class SolarPanel extends Construct {
     })
 
     // Agents
-    const description = `
-You are a solar energy helper bot.
-You can retrieve information on how to install and do maintenance on solar panels
-    `;
+    const description = `You are a solar energy helper bot.
+You can retrieve information on how to install and do maintenance on solar panels`;
 
-    const instruction = `
-You are a Solar Energy Assistant that helps customers with solar panel installation and maintenance guidance.
+    const instruction = `You are a Solar Energy Assistant that helps customers with solar panel installation and maintenance guidance.
 
 Your capabilities include:
 1. Providing installation instructions
@@ -129,8 +127,7 @@ Response style:
 - Focus on actionable guidance
 - Maintain natural conversation flow
 - Be concise yet informative
-- Do not add extra information not required by the user
-    `;
+- Do not add extra information not required by the user`;
 
     const agent = new bedrock.Agent(this, 'SolarPanelAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,

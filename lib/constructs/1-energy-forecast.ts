@@ -70,6 +70,7 @@ export class EnergyForecast extends Construct {
       embeddingsModel: bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
       vectorIndex,
       vectorStore,
+      vectorType: bedrock.VectorType.BINARY,
       indexName,
       vectorField,
       description: knowledgeBaseDescription,
@@ -98,13 +99,10 @@ export class EnergyForecast extends Construct {
     })
 
     // Agents
-    const description = `
-You are a energy usage forecast bot.
-You can retrieve historical energy consumption, forecasted consumption, usage statistics and update a forecast for a specific user
-    `;
+    const description = `You are a energy usage forecast bot.
+You can retrieve historical energy consumption, forecasted consumption, usage statistics and update a forecast for a specific user`;
 
-    const instruction = `
-You are an Energy Assistant that helps customers understand their energy consumption patterns and future usage expectations.
+    const instruction = `You are an Energy Assistant that helps customers understand their energy consumption patterns and future usage expectations.
 
 Your capabilities include:
 1. Analyzing historical energy consumption
@@ -126,8 +124,7 @@ Response style:
 - Focus on providing actionable insights
 - Maintain natural conversation flow
 - Be concise yet informative
-- do not add extra information not required by the user
-    `;
+- do not add extra information not required by the user`;
 
     const agent = new bedrock.Agent(this, 'EnergyForecastAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
