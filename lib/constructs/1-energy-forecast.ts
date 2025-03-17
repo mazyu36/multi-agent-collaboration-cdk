@@ -61,6 +61,8 @@ export class EnergyForecast extends Construct {
           filterable: true,
         },
       ],
+      precision: 'Binary',
+      distanceType: 'hamming',
     });
 
     // Knowledge Base
