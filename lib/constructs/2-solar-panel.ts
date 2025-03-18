@@ -7,7 +7,8 @@ import {
   aws_s3 as s3,
   aws_s3_deployment as s3deploy,
   aws_logs as logs,
-  aws_lambda as lambda
+  aws_lambda as lambda,
+  CfnOutput
 } from 'aws-cdk-lib';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { bedrock, opensearchserverless, opensearch_vectorindex } from '@cdklabs/generative-ai-cdk-constructs';
@@ -17,6 +18,8 @@ export interface SolarPanelProps {
 }
 
 export class SolarPanel extends Construct {
+  public readonly agent: bedrock.Agent;
+  public readonly agentAlias: bedrock.AgentAlias;
   constructor(scope: Construct, id: string, props: SolarPanelProps) {
     super(scope, id);
 
@@ -58,13 +61,16 @@ export class SolarPanel extends Construct {
           filterable: true,
         },
       ],
+      precision: 'Binary',
+      distanceType: 'hamming',
     });
 
     // Knowledge Base
-    const knowledgeBase = new bedrock.KnowledgeBase(this, 'KnowledgeBaseForSolarPanelAgent', {
+    const knowledgeBase = new bedrock.VectorKnowledgeBase(this, 'KnowledgeBaseForSolarPanelAgent', {
       embeddingsModel: bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
       vectorIndex,
       vectorStore,
+      vectorType: bedrock.VectorType.BINARY,
       indexName,
       vectorField,
       description: knowledgeBaseDescription,
@@ -93,13 +99,10 @@ export class SolarPanel extends Construct {
     })
 
     // Agents
-    const description = `
-You are a solar energy helper bot.
-You can retrieve information on how to install and do maintenance on solar panels
-    `;
+    const description = `You are a solar energy helper bot.
+You can retrieve information on how to install and do maintenance on solar panels`;
 
-    const instruction = `
-You are a Solar Energy Assistant that helps customers with solar panel installation and maintenance guidance.
+    const instruction = `You are a Solar Energy Assistant that helps customers with solar panel installation and maintenance guidance.
 
 Your capabilities include:
 1. Providing installation instructions
@@ -124,8 +127,7 @@ Response style:
 - Focus on actionable guidance
 - Maintain natural conversation flow
 - Be concise yet informative
-- Do not add extra information not required by the user
-    `;
+- Do not add extra information not required by the user`;
 
     const agent = new bedrock.Agent(this, 'SolarPanelAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
@@ -133,10 +135,12 @@ Response style:
       description,
       idleSessionTTL: Duration.seconds(1800),
       name: solarPanelAgentName,
+      shouldPrepareAgent: true,
     });
+    this.agent = agent;
 
-    new bedrock.AgentAlias(this, 'SolarPanelAgentAlias', {
-      agentId: agent.agentId,
+    this.agentAlias=new bedrock.AgentAlias(this, 'SolarPanelAgentAlias', {
+      agent,
     });
 
     agent.addKnowledgeBase(knowledgeBase);
@@ -172,47 +176,44 @@ Response style:
 
     table.grantReadWriteData(actionGroupFunction);
 
-    const actionGroup = new bedrock.AgentActionGroup(this, 'SolarPanelActionGroup', {
-      actionGroupExecutor: {
-        lambda: actionGroupFunction,
-      },
-      actionGroupState: 'ENABLED',
-      actionGroupName: 'solar_energy_actions',
+    const actionGroup = new bedrock.AgentActionGroup({
+      name: 'solar_energy_actions',
       description: 'Function to open an energy ticket for a user or get status from an opened ticket',
+      executor: bedrock.ActionGroupExecutor.fromlambdaFunction(actionGroupFunction),
       functionSchema: {
         functions: [
           {
             name: 'open_ticket',
             description: 'Create a ticket to get help with information related with solar panel or clean energy',
             parameters: {
-                customer_id: {
-                    description: 'Unique customer identifier',
-                    required: true,
-                    type: 'string',
-                },
-                msg: {
-                    description: 'The reason why customer is opening a ticket',
-                    required: true,
-                    type: 'string',
-                }
+              customer_id: {
+                description: 'Unique customer identifier',
+                required: true,
+                type: 'string',
+              },
+              msg: {
+                description: 'The reason why customer is opening a ticket',
+                required: true,
+                type: 'string',
+              }
             }
-        },
-        {
+          },
+          {
             name: 'get_ticket_status',
             description: 'get the status of an existing ticket',
             parameters: {
-                customer_id: {
-                    description: 'Unique customer identifier',
-                    required: true,
-                    type: 'string',
-                },
-                ticket_id: {
-                    description: 'Unique ticket identifier',
-                    required: false,
-                    type: 'string',
-                }
+              customer_id: {
+                description: 'Unique customer identifier',
+                required: true,
+                type: 'string',
+              },
+              ticket_id: {
+                description: 'Unique ticket identifier',
+                required: false,
+                type: 'string',
+              }
             }
-        }
+          }
         ]
       },
     });
@@ -220,14 +221,22 @@ Response style:
     agent.addActionGroup(actionGroup);
 
 
-    const codeInterpreterActionGroup = new bedrock.AgentActionGroup(this, 'SolarPanelCodeInterpretestActionGroup', {
-      actionGroupName: 'CodeInterpreterAction',
-      actionGroupState: 'ENABLED',
-      parentActionGroupSignature: 'AMAZON.UserInput',
+    const codeInterpreterActionGroup = new bedrock.AgentActionGroup({
+      name: 'SolarCodeInterpreterAction',
+      parentActionGroupSignature: bedrock.ParentActionGroupSignature.USER_INPUT,
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
 
+    new CfnOutput(this, 'OutputAgentId', {
+      value: this.agent.agentId,
+      exportName: 'SolarPanelAgentId',
+    });
+
+    new CfnOutput(this, 'OutputAgentAliasId', {
+      value: this.agentAlias.aliasId,
+      exportName: 'SolarPanelAgentAliasId',
+    });
   }
 
 };

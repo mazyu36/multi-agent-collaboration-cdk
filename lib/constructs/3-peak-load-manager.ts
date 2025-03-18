@@ -7,7 +7,8 @@ import {
   aws_s3 as s3,
   aws_s3_deployment as s3deploy,
   aws_logs as logs,
-  aws_lambda as lambda
+  aws_lambda as lambda,
+  CfnOutput
 } from 'aws-cdk-lib';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { bedrock } from '@cdklabs/generative-ai-cdk-constructs';
@@ -17,6 +18,8 @@ export interface PeakLoadManagerProps {
 }
 
 export class PeakLoadManager extends Construct {
+  public readonly agent: bedrock.Agent;
+  public readonly agentAlias: bedrock.AgentAlias;
   constructor(scope: Construct, id: string, props: PeakLoadManagerProps) {
     super(scope, id);
 
@@ -29,13 +32,10 @@ export class PeakLoadManager extends Construct {
     const dynamodbSk = 'item_id';
 
     // Agents
-    const description = `
-You are a peak load manager bot.
-You can retrieve information from IoT devices, identify process and their peak energy consumption and suggest shifts to off-peak hours.
-    `;
+    const description = `You are a peak load manager bot.
+You can retrieve information from IoT devices, identify process and their peak energy consumption and suggest shifts to off-peak hours.`;
 
-    const instruction = `
-You are a Peak Load Manager Bot that optimizes energy consumption patterns
+    const instruction = `You are a Peak Load Manager Bot that optimizes energy consumption patterns
 by analyzing IoT device data and process schedules.
 
 Your capabilities include:
@@ -49,8 +49,7 @@ Response style:
 - Focus on actionable recommendations
 - Support suggestions with data
 - Be concise yet thorough
-- Do not request information that can be retrieved from IoT devices
-    `;
+- Do not request information that can be retrieved from IoT devices`;
 
     const agent = new bedrock.Agent(this, 'PeakLoadManagerAgent', {
       foundationModel: bedrock.BedrockFoundationModel.AMAZON_NOVA_PRO_V1,
@@ -58,10 +57,12 @@ Response style:
       description,
       idleSessionTTL: Duration.seconds(1800),
       name: peakLoadManagerAgentName,
+      shouldPrepareAgent: true,
     });
+    this.agent = agent;
 
-    new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
-      agentId: agent.agentId,
+    this.agentAlias = new bedrock.AgentAlias(this, 'PeakLoadManagerAgentAlias', {
+      agent,
     });
 
     // Agent Action Group
@@ -95,13 +96,10 @@ Response style:
 
     table.grantReadWriteData(actionGroupFunction);
 
-    const actionGroup = new bedrock.AgentActionGroup(this, 'PeakLoadManagerActionGroup', {
-      actionGroupExecutor: {
-        lambda: actionGroupFunction,
-      },
-      actionGroupState: 'ENABLED',
-      actionGroupName: 'peak_load_actions',
+    const actionGroup = new bedrock.AgentActionGroup({
+      name: 'peak_load_actions',
       description: 'Function to get usage, peaks, redistribution for a user',
+      executor: bedrock.ActionGroupExecutor.fromlambdaFunction(actionGroupFunction),
       functionSchema: {
         functions: [
           {
@@ -154,14 +152,22 @@ Response style:
     agent.addActionGroup(actionGroup);
 
 
-    const codeInterpreterActionGroup = new bedrock.AgentActionGroup(this, 'PeakLoadManagerCodeInterpretestActionGroup', {
-      actionGroupName: 'CodeInterpreterAction',
-      actionGroupState: 'ENABLED',
-      parentActionGroupSignature: 'AMAZON.UserInput',
+    const codeInterpreterActionGroup = new bedrock.AgentActionGroup({
+      name: 'PeakLoadCodeInterpreterAction',
+      parentActionGroupSignature: bedrock.ParentActionGroupSignature.USER_INPUT,
     })
 
     agent.addActionGroup(codeInterpreterActionGroup);
 
+    new CfnOutput(this, 'OutputAgentId', {
+      value: this.agent.agentId,
+      exportName: 'PeakLoadAgentId',
+    });
+
+    new CfnOutput(this, 'OutputAgentAliasId', {
+      value: this.agentAlias.aliasId,
+      exportName: 'PeakLoadAgentAliasId',
+    });
   }
 
 };
